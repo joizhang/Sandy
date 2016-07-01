@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" 
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context  
+		http://www.springframework.org/schema/context/spring-context.xsd"
+	default-lazy-init="true">
+
+	<description>Shiro Configuration</description>
+	
+	<!-- 加载配置属性文件 -->
+	<context:property-placeholder ignore-unresolvable="true" location="classpath:config.properties" />
+	
+	<bean id="springCacheManagerWrapper" class="com.joizhang.security.spring.SpringCacheManagerWrapper">
+        <property name="cacheManager" ref="springCacheManager"/>
+    </bean>
+	
+	<!-- 凭证匹配器 -->
+    <bean id="credentialsMatcher" class="com.joizhang.security.RetryLimitHashedCredentialsMatcher">
+        <constructor-arg ref="springCacheManagerWrapper"/>
+        <property name="hashAlgorithmName" value="md5"/>
+        <property name="hashIterations" value="2"/>
+        <property name="storedCredentialsHexEncoded" value="true"/>
+    </bean>
+	
+	<bean id="myRealm" class="com.joizhang.realm.MyRealm">
+		<property name="credentialsMatcher" ref="credentialsMatcher"/>
+	</bean>  
+	
+	<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">  
+    	<property name="realm" ref="myRealm"/>  
+	</bean>  
+
+	<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">  
+	    <property name="securityManager" ref="securityManager"/>  
+	    <property name="loginUrl" value="/login"/>
+	    <property name="successUrl" value="/index"/>
+	    <property name="unauthorizedUrl" value="view/error/500.html"/>
+	    <property name="filterChainDefinitions">  
+	        <value>
+	        	/api/** = anon
+	        	/file = anon 
+	        	/index2.html = anon 
+	        	/ = anon 
+	        	/login = authc
+	            /logout = logout
+	            /static/** = anon
+	            /** = authc
+	        </value>
+	    </property>
+	</bean>  
+	   
+	<!-- 保证实现了Shiro内部lifecycle函数的bean执行 -->  
+	<bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>  
+</beans>

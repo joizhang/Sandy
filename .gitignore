@@ -1,0 +1,4 @@
+.idea/
+src/main/webapp/app/bower_components
+target/
+spring.log
